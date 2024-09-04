@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>信息提取</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            padding: 0 10px;
+        }
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 600px;
+            position: relative;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        textarea {
+            width: 100%;
+            height: 150px;
+            margin-bottom: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            resize: none;
+        }
+        button {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .copy-button {
+            background-color: #28a745;
+            width: 80px;
+            height: 30px;
+            font-size: 14px;
+            line-height: 5px;
+            border-radius: 3px;
+            cursor: pointer;
+            border: none;
+            margin-left: 10px;
+            text-align: center;
+            color: #fff;
+            display: inline-block;
+        }
+        .copy-button:hover {
+            background-color: #218838;
+        }
+        .item {
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .item span {
+            white-space: nowrap;
+        }
+        @media (max-width: 600px) {
+            .container {
+                padding: 10px;
+            }
+            button {
+                padding: 10px;
+            }
+        }
+        #notification {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #28a745;
+            color: #fff;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>信息提取</h1>
+    <textarea id="user-input" placeholder="请输入数据..."></textarea>
+    <button id="process-button">提取</button>
+
+    <h2>药材信息</h2>
+    <div id="herb-info"></div>
+
+    <h2>炼金内容</h2>
+    <div id="alchemy-info"></div>
+</div>
+
+<script>
+
+    function extractInfo(text) {
+        // 药材提取相关信息
+        const herbsShengXi = [
+            ["火精枣", "地黄参", "宁心草", "凝血草", "红绫草", "恒心草", "罗犀草", "天青花", "银月花", "宁神花", "剑芦", "七星草"],
+            ["五柳根", "天元果", "流莹草", "蛇涎果", "风灵花", "伏龙参", "何首乌", "夜交藤", "夏枯草", "百草露", "凌风花", "补天芝"],
+            ["紫猴花", "九叶芝", "幻心草", "鬼臼草"],
+            ["血莲精", "鸡冠草", "银精芝", "玉髓芝"],
+            ["地心火芝", "天蝉灵叶", "雪玉骨参", "腐骨灵花"],
+            ["三叶青芝", "七彩月兰", "三尾风叶", "冰灵焰草"],
+            ["地心淬灵乳", "天麻翡石精", "八角玄冰草", "奇茸通天菊"],
+            ["檀芒九叶花", "坎水玄冰果"],
+            ["剑魄竹笋", "明心问道果"]
+        ];
+        const herbsNonShengXi = [
+            ["轻灵草", "龙葵", "弗兰草", "玄参", "枫香脂", "炼魂珠", "玄冰花", "炼血珠"],
+            ["菩提花", "乌稠木", "雪凝花", "龙纹草", "石龙芮", "锦地罗", "冰灵果", "玉龙参"],
+            ["天灵果", "灯心草", "穿心莲", "龙鳞果", "伴妖草", "剑心竹", "绝魂草", "月灵花"],
+            ["白沉脂", "苦曼藤", "血菩提", "诱妖草", "混元果", "皇龙花", "天剑笋", "黑天麻"],
+            ["天问花", "渊血冥花", "芒焰果", "问道花", "血玉竹", "肠蚀草", "凤血果", "冰精芝"],
+            ["阴阳黄泉花", "厉魂血珀", "浩淼水藤", "道蕴花", "狼桃", "霸王花", "太清玄灵草", "冥胎骨"],
+            ["太乙碧莹花", "森檀木", "炼心芝", "重元换血草", "地龙干", "龙须藤", "鬼面花", "梧桐木"]
+        ];
+        const pricesShengXi = [1000000, 1200000, 1900000, 2300000, 2700000, 3200000, 3600000, 4000000, 4400000];
+        const pricesNonShengXi = [1500000, 1900000, 2300000, 2800000, 3200000, 3600000, 4000000];
+        const specialHerbs = ["木灵三针花", "鎏鑫天晶草", "离火梧桐芝", "尘磊岩麟果"];
+        const specialPrices = [5000000, 5000000, 6000000, 6000000];
+        function extractHerbPrices(text) {
+            const herbPrices = [];
+            const namePattern = /名字：([^\n]+?)(?=\s+品级：|$)/g;
+            const quantityPattern = /拥有数量:(\d+)/g;
+
+            let nameMatch;
+            let quantityMatch;
+
+            while ((nameMatch = namePattern.exec(text)) !== null && (quantityMatch = quantityPattern.exec(text)) !== null) {
+                const herbName = nameMatch[1];
+                const quantity = parseInt(quantityMatch[1]);
+                let price = 0;
+
+                let found = false;
+
+                for (let i = 0; i < specialHerbs.length; i++) {
+                    if (specialHerbs[i] === herbName) {
+                        price = specialPrices[i];
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    for (let i = 0; i < herbsShengXi.length; i++) {
+                        for (const herb of herbsShengXi[i]) {
+                            if (herb === herbName) {
+                                price = pricesShengXi[i];
+                                found = true;
+                                break;
+                            }
+                        }
+                        if (found) break;
+                    }
+                }
+                if (!found) {
+                    for (let i = 0; i < herbsNonShengXi.length; i++) {
+                        for (const herb of herbsNonShengXi[i]) {
+                            if (herb === herbName) {
+                                price = pricesNonShengXi[i];
+                                found = true;
+                                break;
+                            }
+                        }
+                        if (found) break;
+                    }
+                }
+                herbPrices.push(new HerbPrice(herbName, price, quantity));
+            }
+            herbPrices.sort((a, b) => b.price - a.price);
+            let result = '';
+            for (const herbPrice of herbPrices) {
+                const priceText = `坊市上架 ${herbPrice.name} ${herbPrice.price} ${herbPrice.quantity}`;
+                result += `
+                <div class="item">
+                    <span>${priceText}</span>
+                    <button class="copy-button" data-text="${priceText}">复制</button>
+                </div>
+                `;
+            }
+            return result;
+        }
+        function extractAlchemyContent(text) {
+            const elixirs = extractElixirs(text);
+            const skillsAndTechniques = extractSkillsAndTechniques(text);
+
+            let output = '<h2></h2>';
+
+            output += '<div>炼金丹药：</div>';
+            output += '<ul>';
+            for (const elixir of elixirs) {
+                output += `<div class="item">炼金${elixir.name} ${elixir.quantity}<button class="copy-button" data-text="炼金${elixir.name} ${elixir.quantity}">复制</button></div>`;
+            }
+            output += '</ul>';
+
+            const skillTypes = { 神通: [], 功法: [] };
+            for (const item of skillsAndTechniques) {
+                skillTypes[item.type].push(item);
+            }
+
+            output += '<div>炼金神通/功法：</div>';
+            output += '<ul>';
+            for (const skill of skillTypes['神通']) {
+                output += `<div class="item">炼金${skill.name} ${skill.quantity}<button class="copy-button" data-text="炼金${skill.name} ${skill.quantity}">复制</button></div>`;
+            }
+            output += '</ul>';
+
+            output += '<ul>';
+            for (const technique of skillTypes['功法']) {
+                output += `<div class="item">炼金${technique.name} ${technique.quantity}<button class="copy-button" data-text="炼金${technique.name} ${technique.quantity}">复制</button></div>`;
+            }
+            output += '</ul>';
+
+            return output;
+        }
+
+        function extractElixirs(text) {
+            const elixirRegex = /名字：((?!渡厄丹|化劫丹|太上玄门丹|金仙破厄丹|太乙炼髓丹|极品遁一丹|极品至尊丹|九天蕴仙丹|真仙造化丹|大道归一丹|菩提证道丹|太清玉液丹|明心丹|冰心丹|幻心玄丹|天命炼心丹|少阴清灵丹|斩我丹|苦茶子|鬼面炼心丹|陨铁炉|雕花紫铜炉|寒铁铸心炉)[^\n]+?)\s*效果：[^\n]*?\s*拥有数量：(\d+)(?!.*炉)/g;
+
+            const elixirs = [];
+            let match;
+            while ((match = elixirRegex.exec(text)) !== null) {
+                const name = match[1];
+                const quantity = parseInt(match[2]);
+                elixirs.push({ name, quantity });
+            }
+
+            return elixirs;
+        }
+        function extractSkillsAndTechniques(text) {
+            const skillRegex = /(天阶|地阶|玄阶|黄阶|人阶)(下品|上品)?(神通|功法)(?:-| )?([^\n]+?):[^\n]*?\s*拥有数量:(\d+)/g;
+
+            const skillsAndTechniques = [];
+            let match;
+            while ((match = skillRegex.exec(text)) !== null) {
+                const type = match[3];
+                const name = match[4].trim();
+                const quantity = parseInt(match[5]);
+                skillsAndTechniques.push({ type, name, quantity });
+            }
+
+            return skillsAndTechniques;
+        }
+        class HerbPrice {
+            constructor(name, price, quantity) {
+                this.name = name;
+                this.price = price;
+                this.quantity = quantity;
+            }
+        }
+
+        const herbResults = extractHerbPrices(text);
+        const alchemyResults = extractAlchemyContent(text);
+
+        document.getElementById('herb-info').innerHTML = herbResults;
+        document.getElementById('alchemy-info').innerHTML = alchemyResults;
+
+        document.querySelectorAll('.copy-button').forEach(button => {
+            button.addEventListener('click', function () {
+                const textToCopy = this.getAttribute('data-text');
+                copyToClipboard(textToCopy);
+                showNotification('复制成功');
+            });
+        });
+    }
+
+    function copyToClipboard(text) {
+        const tempTextArea = document.createElement('textarea');
+        tempTextArea.value = text;
+        document.body.appendChild(tempTextArea);
+        tempTextArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(tempTextArea);
+    }
+
+    function showNotification(message) {
+        let notification = document.getElementById('notification');
+        if (!notification) {
+            notification = document.createElement('div');
+            notification.id = 'notification';
+            document.body.appendChild(notification);
+        }
+        notification.textContent = message;
+        notification.style.display = 'block';
+        setTimeout(() => {
+            notification.style.display = 'none';
+        }, 2000);
+    }
+
+    document.getElementById('process-button').addEventListener('click', function () {
+        const userInputText = document.getElementById('user-input').value;
+        extractInfo(userInputText);
+    });
+
+
+</script>
+</body>
+</html>
